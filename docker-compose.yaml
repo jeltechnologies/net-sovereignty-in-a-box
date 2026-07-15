@@ -12,8 +12,7 @@ services:
   init:
     build:
       context: ./init
-    image: net-sovereignty-in-a-box-init:local
-    pull_policy: build
+    image: ghcr.io/jeltechnologies/net-sovereignty-in-a-box-init:latest
     container_name: net-sovereignty-in-a-box-init
     volumes:
       - ./data:/etc/xray
@@ -44,8 +43,7 @@ services:
     build:
       context: ./portal
       dockerfile: Dockerfile
-    image: net-sovereignty-in-a-box-portal:local
-    pull_policy: build
+    image: ghcr.io/jeltechnologies/net-sovereignty-in-a-box-portal:latest
     container_name: net-sovereignty-in-a-box-portal
     restart: unless-stopped
     networks:
