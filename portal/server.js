@@ -5,8 +5,7 @@ const fs     = require('fs');
 const QRCode = require('qrcode');
 
 const env = k => process.env[k] || '';
-const PUBLIC_KEY = env('PUBLIC_KEY');
-const XRAY_PORT  = env('XRAY_PORT') || '443';
+const XRAY_PORT = env('XRAY_PORT') || '443';
 
 const PORT = 8080;
 const IDENTITY_FILE = '/etc/xray/identity.env';
@@ -14,6 +13,7 @@ const IDENTITY_FILE = '/etc/xray/identity.env';
 let UUID       = '';
 let SHORT_ID   = '';
 let SNI_DOMAIN = '';
+let PUBLIC_KEY = '';
 let PUBLIC_IP  = '';
 let VLESS_LINK = '';
 
@@ -196,6 +196,7 @@ async function start() {
   UUID       = identity.UUID;
   SHORT_ID   = identity.SHORT_ID;
   SNI_DOMAIN = identity.SNI_DOMAIN;
+  PUBLIC_KEY = identity.PUBLIC_KEY;
 
   PUBLIC_IP = await fetchPublicIp();
   const location = await fetchLocation(PUBLIC_IP);

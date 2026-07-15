@@ -1,5 +1,6 @@
 # =============================================================================
-# Xray VLESS+REALITY Stack — credentials hardcoded, no .env needed
+# Xray VLESS+REALITY Stack — client identity and REALITY keypair are
+# auto-generated on first start by the `identity` service, not hardcoded.
 # =============================================================================
 networks:
   xray-net:
@@ -52,7 +53,6 @@ services:
     volumes:
       - ./xray/config:/etc/xray:ro
     environment:
-      PUBLIC_KEY: "NgQGJAT8JYwvzzIzfm_nt_OF2wAV-Rw1G2NdH_fHrB8"
       XRAY_PORT: "443"
     depends_on:
       identity:
