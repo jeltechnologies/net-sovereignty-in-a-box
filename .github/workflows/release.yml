@@ -58,7 +58,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create GitHub release with auto-generated notes
+      - name: Generate changelog since previous tag
+        run: |
+          PREV_TAG=$(git tag --sort=-creatordate | grep -Fxv "$GITHUB_REF_NAME" | head -n1)
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes since $PREV_TAG" > CHANGELOG_BODY.md
+            echo "" >> CHANGELOG_BODY.md
+            git log "${PREV_TAG}..${GITHUB_REF_NAME}" --pretty=format:'- %s (%h)' >> CHANGELOG_BODY.md
+          else
+            echo "## Changes" > CHANGELOG_BODY.md
+            echo "" >> CHANGELOG_BODY.md
+            git log "$GITHUB_REF_NAME" --pretty=format:'- %s (%h)' >> CHANGELOG_BODY.md
+          fi
+
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: CHANGELOG_BODY.md
