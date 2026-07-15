@@ -8,17 +8,17 @@ For over a decade, China has run the most sophisticated internet censorship syst
 
 This repository packages that battle-tested technology into a single Docker Compose stack you can stand up in minutes.
 
-## Why this project specifically
-
-There's no shortage of tutorials on V2Ray and REALITY already. The problem is that most of them are very technical, involve many manual steps, hand-editing config files, and troubleshooting — and a lot of the best material is written in Chinese or the language of another censored country, since that's where the demand and expertise concentrated first. This project exists to strip all of that away: an extremely easy, complete deployment in about 15 minutes, with no networking expertise required.
-
 ## Why this matters beyond China
 
 Censorship doesn't stay in one place. The playbook is well established: first block specific sites and services, then when people route around that with VPNs, pressure the infrastructure providers — the ISPs — into blocking the VPNs themselves. China spent years doing exactly this, and each time, camouflage-based protocols like REALITY kept working precisely because they don't look like a VPN at the network level in the first place.
 
-The European Union is moving toward its own tightening framework of digital regulation, content controls, and age/identity verification mandates. It is reasonable to expect that as these rules mature, the same pressure will eventually land on ISPs: not just blocking specific content, but blocking the tools people use to route around blocks — the same trajectory China already walked. Conventional VPN protocols are relatively easy to fingerprint and blocklist once a regulator decides to go after them.
+The United Kingdom has already moved first, with age-verification and content-blocking rules under the Online Safety Act now requiring ISPs and platforms to restrict access based on identity and location. The European Union is moving toward its own tightening framework of digital regulation, content controls, and age/identity verification mandates, and it is reasonable to expect the EU to follow the same path the UK has already started down. As these rules mature, the same pressure will eventually land on ISPs: not just blocking specific content, but blocking the tools people use to route around blocks — the same trajectory China already walked. Conventional VPN protocols are relatively easy to fingerprint and blocklist once a regulator decides to go after them.
 
 The value of deploying your own REALITY-based proxy now, while it's simple and unregulated, is that you're not scrambling to react once restrictions land. You own the server, you own the disguise domain, and you're not dependent on a commercial VPN provider who can be pressured, subpoenaed, or blocked wholesale. This lets you stay a step ahead of legislation rather than a step behind it.
+
+## Why this project specifically
+
+There's no shortage of tutorials on V2Ray and REALITY already. The problem is that most of them are very technical, involve many manual steps, hand-editing config files, and troubleshooting — and a lot of the best material is written in Chinese or the language of another censored country, since that's where the demand and expertise concentrated first. This project exists to strip all of that away: an extremely easy, complete deployment in about 15 minutes, with no networking expertise required.
 
 ## What you get
 
