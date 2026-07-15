@@ -8,6 +8,10 @@ For over a decade, China has run the most sophisticated internet censorship syst
 
 This repository packages that battle-tested technology into a single Docker Compose stack you can stand up in minutes.
 
+## Why this project specifically
+
+There's no shortage of tutorials on V2Ray and REALITY already. The problem is that most of them are very technical, involve many manual steps, hand-editing config files, and troubleshooting — and a lot of the best material is written in Chinese or the language of another censored country, since that's where the demand and expertise concentrated first. This project exists to strip all of that away: an extremely easy, complete deployment in about 15 minutes, with no networking expertise required.
+
 ## Why this matters beyond China
 
 Censorship doesn't stay in one place. The playbook is well established: first block specific sites and services, then when people route around that with VPNs, pressure the infrastructure providers — the ISPs — into blocking the VPNs themselves. China spent years doing exactly this, and each time, camouflage-based protocols like REALITY kept working precisely because they don't look like a VPN at the network level in the first place.
