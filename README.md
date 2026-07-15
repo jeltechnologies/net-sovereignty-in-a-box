@@ -40,7 +40,7 @@ The value of deploying your own REALITY-based proxy now, while it's simple and u
 
 3. **Install Docker** on the VPS.
 
-4. **Add the `docker-compose.yaml` file** to the VPS. Download it from [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yml) and place it in a folder on your VPS.
+4. **Add the `docker-compose.yaml` file** to the VPS. Download it from [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml) and place it in a folder on your VPS.
 
 5. **Run it:**
    ```

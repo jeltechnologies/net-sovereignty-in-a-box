@@ -13,7 +13,7 @@ xray  (teddysun/xray)  — VLESS+REALITY proxy server, config-driven, port 443
 portal (Node 20, ./portal) — status page + JSON/QR endpoints for the VLESS link, port 8080 internally, published on 16810
 ```
 
-All three are wired together in `docker-compose.yml`. There is no build tooling, test suite, or linter
+All three are wired together in `docker-compose.yaml`. There is no build tooling, test suite, or linter
 in this repo — `portal` and `init`'s `generate-identity.sh` are the only things with actual code.
 
 ## Releases
@@ -37,7 +37,7 @@ docker compose logs -f xray
 docker compose logs -f portal
 
 # Run the portal locally without Docker (needs an identity.env at /etc/xray/identity.env,
-# see "Client identity" below, plus the same XRAY_PORT env var docker-compose.yml sets)
+# see "Client identity" below, plus the same XRAY_PORT env var docker-compose.yaml sets)
 cd portal && npm install
 XRAY_PORT=443 node server.js
 ```
@@ -75,9 +75,9 @@ XRAY_PORT=443 node server.js
 - **The public IP is not hardcoded anywhere.** On startup, `server.js` fetches its own public IP from
   `https://api.ipify.org` and uses it to build `VLESS_LINK` in memory; if that fetch fails, the process
   exits and relies on Docker's `restart: unless-stopped` to retry. `PUBLIC_IP`/`VLESS_LINK` are no longer
-  environment variables — don't reintroduce them as hardcoded env vars in `docker-compose.yml`.
+  environment variables — don't reintroduce them as hardcoded env vars in `docker-compose.yaml`.
 - Portal routes: `/` (HTML status page), `/json` and `/api` (connection info as JSON), `/qr` (PNG QR
-  code of the VLESS link). All other connection details read from env vars set by `docker-compose.yml`;
+  code of the VLESS link). All other connection details read from env vars set by `docker-compose.yaml`;
   there's no config file for the portal.
 - `data/config.json` blocks private and China (`geoip:cn`) IP ranges via routing rules — keep
   this in mind if debugging connectivity that looks like a routing rejection rather than a proxy failure.
