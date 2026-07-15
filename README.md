@@ -16,7 +16,7 @@ The United Kingdom has already moved first, with age-verification and content-bl
 
 The value of deploying your own REALITY-based proxy now, while it's simple and unregulated, is that you're not scrambling to react once restrictions land. You own the server, you own the disguise domain, and you're not dependent on a commercial VPN provider who can be pressured, subpoenaed, or blocked wholesale. This lets you stay a step ahead of legislation rather than a step behind it.
 
-## Why this project specifically
+## Why this project was made
 
 There's no shortage of tutorials on V2Ray and REALITY already. The problem is that most of them are very technical, involve many manual steps, hand-editing config files, and troubleshooting — and a lot of the best material is written in Chinese or the language of another censored country, since that's where the demand and expertise concentrated first. This project exists to strip all of that away: an extremely easy, complete deployment in about 15 minutes, with no networking expertise required.
 
