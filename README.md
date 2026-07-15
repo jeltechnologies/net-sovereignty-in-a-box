@@ -46,16 +46,19 @@ The value of deploying your own REALITY-based proxy now, while it's simple and u
 
 4. **Add the `docker-compose.yaml` file** to the VPS. Download it from [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml) and place it in a folder on your VPS.
 
-5. **Run it:**
+5. **Set portal credentials.** Open `docker-compose.yaml` and fill in `PORTAL_USER_NAME` and `PORTAL_PASSWORD` under the `portal` service's `environment:` section — they're blank by default, and the portal refuses to show your connection details until both are set.
+
+6. **Run it:**
    ```
    docker compose up -d
    ```
-   On first start, the stack automatically generates a unique client identity and REALITY keypair — no manual configuration required.
+   On first start, the stack automatically generates a unique client identity and REALITY keypair — no manual configuration required beyond the portal credentials above.
 
-6. **Open the portal.** In a browser, go to:
+7. **Open the portal.** In a browser, go to:
    ```
    http://<VPS_IP>:16810
    ```
+   Log in with the `PORTAL_USER_NAME`/`PORTAL_PASSWORD` you set in step 5.
 
 ## How to connect
 

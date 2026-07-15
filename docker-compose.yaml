@@ -17,7 +17,13 @@ services:
     volumes:
       - ./data:/etc/xray
     environment:
-      SNI_DOMAIN: ${SNI_DOMAIN:-}
+      # Camouflage domain used only on first start, when the identity is
+      # generated (see the top-level comment above). Edit this value
+      # directly if www.microsoft.com isn't a good fit for you — it must be
+      # a globally trusted, unblocked, high-traffic domain your local ISP
+      # lets you reach freely (other options: aspnetcdn.com, www.apple.com,
+      # swcdn.apple.com).
+      SNI_DOMAIN: www.microsoft.com
 
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────
   xray:
@@ -54,6 +60,11 @@ services:
       - ./data:/etc/xray:ro
     environment:
       XRAY_PORT: "443"
+      # Basic Auth for the portal. Left blank on purpose — the portal
+      # exposes your UUID, REALITY keys, and VLESS link, so you must set
+      # both directly here before it will serve any connection details.
+      PORTAL_USER_NAME: "admin"
+      PORTAL_PASSWORD: "admin"
     depends_on:
       init:
         condition: service_completed_successfully

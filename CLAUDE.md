@@ -39,10 +39,27 @@ docker compose logs -f portal
 # Run the portal locally without Docker (needs an identity.env at /etc/xray/identity.env,
 # see "Client identity" below, plus the same XRAY_PORT env var docker-compose.yaml sets)
 cd portal && npm install
-XRAY_PORT=443 node server.js
+XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme node server.js
 ```
 
 ## Architecture notes
+
+- **There is no `.env` file, and there should not be one.** `SNI_DOMAIN`, `PORTAL_USER_NAME`, and
+  `PORTAL_PASSWORD` are hardcoded literals directly in `docker-compose.yaml`'s `environment:` blocks
+  (not `${VAR:-default}` interpolation) — customizing any of these means editing `docker-compose.yaml`
+  directly, then recreating the affected service (e.g. `docker compose up -d portal`) to pick up the
+  change. Don't reintroduce a `.env` file/`.env.example` or `${VAR}` substitution for these — that's a
+  deliberate simplification, not an oversight (this is a single-user personal proxy stack with no real
+  secrets to separate out).
+
+- **The portal is protected by HTTP Basic Auth, `PORTAL_USER_NAME`/`PORTAL_PASSWORD`, both left blank
+  in `docker-compose.yaml` on purpose** — the portal exposes the UUID, REALITY keys, and VLESS link, so
+  operators are forced to pick real credentials by editing those two lines directly rather than running
+  with a guessable default like `admin`/`admin`. Until both are set, every route (including `/qr` and
+  `/json`) returns a `500` error page instead of serving connection details; `server.js` checks this by
+  testing whether both env vars are non-empty. Once both are set and the service is recreated, every
+  route requires HTTP Basic Auth — browsers show their native login prompt via the `401` +
+  `WWW-Authenticate` response — checked with `crypto.timingSafeEqual` in `server.js`.
 
 - **Client identity — UUID, short ID, SNI/serverName, and the REALITY X25519 keypair — is fully
   auto-generated on first start**, nothing is hardcoded. All three services mount the top-level
@@ -54,8 +71,8 @@ XRAY_PORT=443 node server.js
   (`init/generate-identity.sh`, image built `FROM teddysun/xray` so the real `xray` binary is
   available) runs once before `xray`/`portal` start: if `data/config.json` doesn't exist yet it's copied
   from the baked-in template, then (unless `identity.env` already exists) it generates a UUID, a random
-  16-hex-char short ID, an SNI domain (the `SNI_DOMAIN` env var if set — see `.env.example` — otherwise
-  `www.microsoft.com`), and a REALITY keypair via `xray x25519` (output parsed from its `PrivateKey:` / `Password (PublicKey):`
+  16-hex-char short ID, an SNI domain (`SNI_DOMAIN`, hardcoded to `www.microsoft.com` in
+  `docker-compose.yaml` — edit it there to change), and a REALITY keypair via `xray x25519` (output parsed from its `PrivateKey:` / `Password (PublicKey):`
   lines — reparse both if a future `xray` version changes that wording). All of these are patched into
   `config.json` via `jq` and written to `identity.env` (including `PUBLIC_KEY`) as the "already
   generated" marker. `portal` reads `identity.env` directly off a read-only mount of `./data` (not

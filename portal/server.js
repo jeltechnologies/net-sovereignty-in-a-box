@@ -2,10 +2,14 @@
 const http   = require('http');
 const url    = require('url');
 const fs     = require('fs');
+const crypto = require('crypto');
 const QRCode = require('qrcode');
 
 const env = k => process.env[k] || '';
 const XRAY_PORT = env('XRAY_PORT') || '443';
+const PORTAL_USER_NAME = env('PORTAL_USER_NAME');
+const PORTAL_PASSWORD  = env('PORTAL_PASSWORD');
+const AUTH_CONFIGURED  = Boolean(PORTAL_USER_NAME && PORTAL_PASSWORD);
 
 const PORT = 8080;
 const IDENTITY_FILE = '/etc/xray/identity.env';
@@ -55,8 +59,46 @@ const esc = s => String(s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+function safeEqual(a, b) {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  // Compare against a same-length buffer first so mismatched lengths don't
+  // short-circuit before timingSafeEqual, which throws on length mismatch.
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function isAuthorized(req) {
+  const header = req.headers['authorization'] || '';
+  if (!header.startsWith('Basic ')) return false;
+  const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+  const idx = decoded.indexOf(':');
+  if (idx === -1) return false;
+  const user = decoded.slice(0, idx);
+  const pass = decoded.slice(idx + 1);
+  return safeEqual(user, PORTAL_USER_NAME) && safeEqual(pass, PORTAL_PASSWORD);
+}
+
 async function handleRequest(req, res) {
   const { pathname } = url.parse(req.url);
+
+  if (!AUTH_CONFIGURED) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Portal authentication is not configured. Set PORTAL_USER_NAME and PORTAL_PASSWORD in docker-compose.yaml and restart the stack.');
+    return;
+  }
+
+  if (!isAuthorized(req)) {
+    res.writeHead(401, {
+      'Content-Type': 'text/plain',
+      'WWW-Authenticate': 'Basic realm="Xray Portal", charset="UTF-8"',
+    });
+    res.end('Authentication required');
+    return;
+  }
 
   if (pathname === '/json' || pathname === '/api') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -192,6 +234,10 @@ footer{font-size:.68rem;color:#334155;margin-top:auto;
 }
 
 async function start() {
+  if (!AUTH_CONFIGURED) {
+    console.warn('PORTAL_USER_NAME and/or PORTAL_PASSWORD not set — the portal will start, but every request will return an error until both are configured in docker-compose.yaml.');
+  }
+
   const identity = loadIdentity();
   UUID       = identity.UUID;
   SHORT_ID   = identity.SHORT_ID;
