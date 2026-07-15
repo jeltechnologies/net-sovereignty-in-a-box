@@ -43,6 +43,11 @@ services:
       nofile:
         soft: 65535
         hard: 65535
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ── 2. Web portal (QR code + JSON) ──────────────────────────────────────────
   portal:
@@ -63,10 +68,15 @@ services:
       # Basic Auth for the portal. Left blank on purpose — the portal
       # exposes your UUID, REALITY keys, and VLESS link, so you must set
       # both directly here before it will serve any connection details.
-      PORTAL_USER_NAME: "admin"
-      PORTAL_PASSWORD: "admin"
+      PORTAL_USER_NAME: ""
+      PORTAL_PASSWORD: ""
     depends_on:
       init:
         condition: service_completed_successfully
       xray:
         condition: service_started
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
