@@ -23,7 +23,7 @@ services:
       # a globally trusted, unblocked, high-traffic domain your local ISP
       # lets you reach freely (other options: aspnetcdn.com, www.apple.com,
       # swcdn.apple.com).
-      SNI_DOMAIN: www.microsoft.com
+      SNI_DOMAIN: swcdn.apple.com
 
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────
   xray:
