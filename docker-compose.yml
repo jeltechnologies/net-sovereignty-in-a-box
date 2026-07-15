@@ -36,7 +36,7 @@ services:
         soft: 65535
         hard: 65535
 
-  # ── 2. Web portal (QR code + JSON, via Newt only) ──────────────────────────
+  # ── 2. Web portal (QR code + JSON) ──────────────────────────────────────────
   portal:
     build:
       context: ./portal
@@ -59,16 +59,3 @@ services:
         condition: service_completed_successfully
       xray:
         condition: service_started
-
-  # ── 3. Newt (Pangolin tunnel) ───────────────────────────────────────────────
-  newt:
-    image: fosrl/newt:latest
-    container_name: newt
-    restart: unless-stopped
-    network_mode: "service:portal"
-    environment:
-      NEWT_ID: "210lmkm0ctcvhqa"
-      NEWT_SECRET: "***REMOVED***"
-      PANGOLIN_ENDPOINT: "https://pangolin.jeltechnologies.com"
-    depends_on:
-      - portal
