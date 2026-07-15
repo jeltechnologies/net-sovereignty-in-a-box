@@ -2,7 +2,7 @@ node_modules/
 npm-debug.log*
 .env
 .env.*
+!.env.example
 *.log
 .DS_Store
-xray/config/identity.env
-xray/config/config.json
+data/

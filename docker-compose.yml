@@ -1,6 +1,6 @@
 # =============================================================================
 # Xray VLESS+REALITY Stack — client identity and REALITY keypair are
-# auto-generated on first start by the `identity` service, not hardcoded.
+# auto-generated on first start by the `init` service, not hardcoded.
 # =============================================================================
 networks:
   xray-net:
@@ -9,14 +9,16 @@ networks:
 services:
 
   # ── 0. Identity generator — creates UUID/shortId/SNI once, on first start ──
-  identity:
+  init:
     build:
-      context: ./xray/init
-    image: xray-identity:local
+      context: ./init
+    image: net-sovereignty-in-a-box-init:local
     pull_policy: build
-    container_name: xray-identity
+    container_name: net-sovereignty-in-a-box-init
     volumes:
-      - ./xray/config:/etc/xray
+      - ./data:/etc/xray
+    environment:
+      SNI_DOMAIN: ${SNI_DOMAIN:-}
 
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────
   xray:
@@ -24,14 +26,14 @@ services:
     container_name: xray
     restart: unless-stopped
     depends_on:
-      identity:
+      init:
         condition: service_completed_successfully
     networks:
       - xray-net
     ports:
       - "443:443/tcp"
     volumes:
-      - ./xray/config:/etc/xray
+      - ./data:/etc/xray
     ulimits:
       nofile:
         soft: 65535
@@ -42,20 +44,20 @@ services:
     build:
       context: ./portal
       dockerfile: Dockerfile
-    image: xray-portal:local
+    image: net-sovereignty-in-a-box-portal:local
     pull_policy: build
-    container_name: xray-portal
+    container_name: net-sovereignty-in-a-box-portal
     restart: unless-stopped
     networks:
       - xray-net
     ports:
       - "16810:8080"
     volumes:
-      - ./xray/config:/etc/xray:ro
+      - ./data:/etc/xray:ro
     environment:
       XRAY_PORT: "443"
     depends_on:
-      identity:
+      init:
         condition: service_completed_successfully
       xray:
         condition: service_started

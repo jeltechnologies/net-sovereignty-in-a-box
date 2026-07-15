@@ -2,7 +2,7 @@
 set -eu
 
 CONFIG_FILE=/etc/xray/config.json
-TEMPLATE_FILE=/etc/xray/config.template.json
+TEMPLATE_FILE=/config.template.json
 IDENTITY_FILE=/etc/xray/identity.env
 
 if [ -f "$IDENTITY_FILE" ]; then
@@ -18,12 +18,7 @@ fi
 UUID=$(cat /proc/sys/kernel/random/uuid)
 SHORT_ID=$(openssl rand -hex 8)
 
-PICK=$(( $(od -An -N1 -tu1 /dev/urandom | tr -d ' ') % 2 ))
-if [ "$PICK" -eq 0 ]; then
-  SNI_DOMAIN=www.cloudflare.com
-else
-  SNI_DOMAIN=www.microsoft.com
-fi
+SNI_DOMAIN=${SNI_DOMAIN:-www.microsoft.com}
 
 KEYPAIR=$(xray x25519)
 PRIVATE_KEY=$(echo "$KEYPAIR" | awk -F': ' '/^PrivateKey:/ {print $2}')
