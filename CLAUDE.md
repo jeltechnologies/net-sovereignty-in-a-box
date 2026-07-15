@@ -9,14 +9,14 @@ tiny Node.js status portal, tunneled to the internet via Pangolin/Newt (no publi
 except Xray's own 443).
 
 ```
+identity (alpine, ./xray/init) — one-shot init container, generates client identity on first start
 xray  (teddysun/xray)  — VLESS+REALITY proxy server, config-driven, port 443
 portal (Node 20, ./portal) — status page + JSON/QR endpoints for the VLESS link, port 8080 (internal only)
 newt  (fosrl/newt)     — Pangolin tunnel client, shares portal's network namespace
 ```
 
-All three are wired together in `docker-compose.yml`. There is no build tooling, test suite, or linter
-in this repo — `portal` is the only thing with actual code, and it's a single-file, dependency-light
-HTTP server.
+All four are wired together in `docker-compose.yml`. There is no build tooling, test suite, or linter
+in this repo — `portal` and `identity`'s `generate-identity.sh` are the only things with actual code.
 
 ## Commands
 
@@ -39,10 +39,25 @@ UUID=... PUBLIC_KEY=... SHORT_ID=... SNI_DOMAIN=... XRAY_PORT=443 node server.js
 
 ## Architecture notes
 
-- **Credentials live in `docker-compose.yml` and `xray/config/config.json`, not in `.env` files.** The
-  UUID, REALITY keys (`privateKey` in xray config vs. `publicKey`/`PUBLIC_KEY` in the portal env), and
-  short ID must stay consistent across both files — the private key never appears in the portal env,
-  only the derived public key does. If you rotate credentials, update both files together.
+- **Client identity (UUID, short ID, SNI/serverName) is auto-generated on first start**, not hardcoded.
+  `xray/config/config.json` and `xray/config/identity.env` are both gitignored — only
+  `xray/config/config.template.json` (static skeleton + placeholder identity fields) is tracked. The
+  `identity` service (`xray/init/generate-identity.sh`) runs once before `xray`/`portal` start: if
+  `config.json` doesn't exist yet it's copied from the template, then (unless `identity.env` already
+  exists) a UUID, a random 16-hex-char short ID, and one SNI domain picked at random from
+  `www.cloudflare.com` / `www.microsoft.com` are generated, patched into `config.json` via `jq`, and
+  written to `identity.env` as the "already generated" marker. `portal` reads `identity.env` directly
+  off a read-only mount of `xray/config` (not Compose `env_file` — that's resolved before the generator
+  container can create the file, a chicken-and-egg problem). On every later start, `identity` sees
+  `identity.env` already exists and exits immediately — identity is stable across restarts. To force a
+  new identity (e.g. to fully rotate access), delete `xray/config/identity.env` (and optionally
+  `config.json`) and restart the stack.
+- **The generator script writes into the existing file inode (`cat > file`), never `mv`** — `mv` from
+  inside the (root) container replaces the inode and leaves `config.json` root-owned and `0600`,
+  unreadable by the host user. If you edit `generate-identity.sh`, preserve this.
+- **The REALITY keypair is still static**, not part of the auto-generated identity: `privateKey` in
+  `xray/config/config.json` and the derived `PUBLIC_KEY` in the portal's `docker-compose.yml` env must
+  stay consistent with each other — if you rotate the keypair, update both files together by hand.
 - **`portal/server.js` is intentionally a single dependency-free-ish file** (only `qrcode` from npm) with
   no framework: raw `http.createServer`, manual routing by `pathname`, inline HTML/CSS template string
   for `/`. Keep changes in this style rather than introducing a framework unless the scope grows

@@ -4,3 +4,5 @@ npm-debug.log*
 .env.*
 *.log
 .DS_Store
+xray/config/identity.env
+xray/config/config.json

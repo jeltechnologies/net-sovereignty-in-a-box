@@ -7,11 +7,24 @@ networks:
 
 services:
 
+  # ── 0. Identity generator — creates UUID/shortId/SNI once, on first start ──
+  identity:
+    build:
+      context: ./xray/init
+    image: xray-identity:local
+    pull_policy: build
+    container_name: xray-identity
+    volumes:
+      - ./xray/config:/etc/xray
+
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────
   xray:
     image: teddysun/xray:latest
     container_name: xray
     restart: unless-stopped
+    depends_on:
+      identity:
+        condition: service_completed_successfully
     networks:
       - xray-net
     ports:
@@ -36,14 +49,16 @@ services:
       - xray-net
     ports:
       - "16810:8080"
+    volumes:
+      - ./xray/config:/etc/xray:ro
     environment:
-      UUID: "faf28d1f-dd18-4091-aa3f-f10419190a74"
       PUBLIC_KEY: "NgQGJAT8JYwvzzIzfm_nt_OF2wAV-Rw1G2NdH_fHrB8"
-      SHORT_ID: "f5c052938ba0aacf"
-      SNI_DOMAIN: "www.cloudflare.com"
       XRAY_PORT: "443"
     depends_on:
-      - xray
+      identity:
+        condition: service_completed_successfully
+      xray:
+        condition: service_started
 
   # ── 3. Newt (Pangolin tunnel) ───────────────────────────────────────────────
   newt:

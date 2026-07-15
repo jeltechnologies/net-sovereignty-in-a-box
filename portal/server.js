@@ -1,19 +1,34 @@
 'use strict';
 const http   = require('http');
 const url    = require('url');
+const fs     = require('fs');
 const QRCode = require('qrcode');
 
 const env = k => process.env[k] || '';
 const PUBLIC_KEY = env('PUBLIC_KEY');
-const UUID       = env('UUID');
-const SHORT_ID   = env('SHORT_ID');
-const SNI_DOMAIN = env('SNI_DOMAIN');
 const XRAY_PORT  = env('XRAY_PORT') || '443';
 
 const PORT = 8080;
+const IDENTITY_FILE = '/etc/xray/identity.env';
 
+let UUID       = '';
+let SHORT_ID   = '';
+let SNI_DOMAIN = '';
 let PUBLIC_IP  = '';
 let VLESS_LINK = '';
+
+function loadIdentity() {
+  const raw = fs.readFileSync(IDENTITY_FILE, 'utf8');
+  const vars = {};
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) continue;
+    vars[trimmed.slice(0, idx)] = trimmed.slice(idx + 1);
+  }
+  return vars;
+}
 
 async function fetchPublicIp() {
   const res = await fetch('https://api.ipify.org');
@@ -21,6 +36,19 @@ async function fetchPublicIp() {
   const ip = (await res.text()).trim();
   if (!ip) throw new Error('ipify returned an empty response');
   return ip;
+}
+
+async function fetchLocation(ip) {
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city`);
+    if (!res.ok) throw new Error('ip-api.com returned status ' + res.status);
+    const data = await res.json();
+    if (data.status !== 'success' || !data.country) throw new Error('ip-api.com lookup failed');
+    return data.city ? `${data.city}, ${data.country}` : data.country;
+  } catch (err) {
+    console.error('Location lookup failed, falling back to default label:', err.message);
+    return 'Xray-REALITY';
+  }
 }
 
 const esc = s => String(s)
@@ -164,8 +192,14 @@ footer{font-size:.68rem;color:#334155;margin-top:auto;
 }
 
 async function start() {
+  const identity = loadIdentity();
+  UUID       = identity.UUID;
+  SHORT_ID   = identity.SHORT_ID;
+  SNI_DOMAIN = identity.SNI_DOMAIN;
+
   PUBLIC_IP = await fetchPublicIp();
-  VLESS_LINK = `vless://${UUID}@${PUBLIC_IP}:${XRAY_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${SNI_DOMAIN}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&type=tcp#Xray-REALITY`;
+  const location = await fetchLocation(PUBLIC_IP);
+  VLESS_LINK = `vless://${UUID}@${PUBLIC_IP}:${XRAY_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${SNI_DOMAIN}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&type=tcp#${encodeURIComponent(location)}`;
 
   http.createServer((req, res) => {
     handleRequest(req, res).catch(err => {

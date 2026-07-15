@@ -10,7 +10,7 @@
       "settings": {
         "clients": [
           {
-            "id": "faf28d1f-dd18-4091-aa3f-f10419190a74",
+            "id": "00000000-0000-0000-0000-000000000000",
             "flow": "xtls-rprx-vision"
           }
         ],
@@ -28,7 +28,7 @@
           ],
           "privateKey": "CBpbCpF-SCUtJACn36Exo1qwzw_60tqFl78jqbkCD3k",
           "shortIds": [
-            "f5c052938ba0aacf"
+            "0000000000000000"
           ]
         }
       },
