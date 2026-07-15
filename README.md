@@ -18,7 +18,7 @@ The value of deploying your own REALITY-based proxy now, while it's simple and u
 
 ## Why this project was made
 
-There's no shortage of tutorials on V2Ray and REALITY already. The problem is that most of them are very technical, involve many manual steps, hand-editing config files, and troubleshooting — and a lot of the best material is written in Chinese or the language of another censored country, since that's where the demand and expertise concentrated first. This project exists to strip all of that away: an extremely easy, complete deployment in about 15 minutes, with no networking expertise required.
+There are many tutorials and information available on the internet on V2Ray, but this material is very technical, takes many manual steps, file editing and troubleshooting, or is written in Chinese or other languages of countries that apply censorship. This project aims to make it extremely easy to deploy a complete solution in 15 minutes, without needing networking expertise.
 
 ## What you get
 
