@@ -1,18 +1,20 @@
 # Net Sovereignty in a Box
 
-This repository privides a internet soveignty and anti-censotrship, powered by that battle-tested technology, deplued in minutes.
+This repository provides internet sovereignty and anti-censorship, powered by battle-tested technology, deployed in minutes.
 
 ## Why this exists
 
 For over a decade, China has run the most sophisticated internet censorship system in the world — the Great Firewall. In that same time, the people living behind it have run the world's most sophisticated censorship-resistance experiments. Every time the Firewall learned to detect and block a new proxy technique, engineers built the next one. **REALITY** is the current state of that arms race: instead of hiding traffic and hoping it isn't noticed, it disguises your connection as an ordinary, everyday visit to a trusted, high-traffic website (think Microsoft or Apple's own servers). To a censor doing deep packet inspection, your traffic looks indistinguishable from millions of other people innocently loading a legitimate site — because in the parts that matter, it genuinely uses that site's real TLS certificate and handshake. There's no fake certificate to fingerprint and no suspicious pattern to flag. This is why REALITY has held up where earlier protocols eventually got detected and blocked.
 
+> **Note:** the camouflage domain (e.g. `www.microsoft.com`) is only used for disguise — your traffic is never routed through it.
+
 ## Why this project was made
 
-There are many tutorials and information available on the internet on V2Ray and REALITY, but this material either very technical, or takes many manual steps, file editing and troubleshooting, or is written in languages of countries that apply active censorship, like Chinese. This project aims to make it extremely easy to deploy a complete solution, without needing networking expertise.
+There are many tutorials and information available on the internet on V2Ray and REALITY, but this material is either very technical, or takes many manual steps, file editing and troubleshooting, or is written in languages of countries that apply active censorship, like Chinese. This project aims to make it extremely easy to deploy a complete solution, without needing networking expertise.
 
 ## Why this matters beyond China
 
-Internet censorship and control is introduced following a playbook that is well established: first block specific sites and services "to protect the people", then when people route around that with VPNs, pressure the infrastructure providers — the ISPs — into blocking the VPNs themselves. China spent years doing exactly this, and each time, people find ways around it, kept working precisely because they don't look like a VPN at the network level in the first place.
+Internet censorship and control is introduced following a playbook that is well established: first block specific sites and services "to protect the people", then when people route around that with VPNs, pressure the infrastructure providers — the ISPs — into blocking the VPNs themselves. China spent years doing exactly this, and each time, camouflage-based protocols like REALITY kept working precisely because they don't look like a VPN at the network level in the first place.
 
 The United Kingdom has already moved first, with age-verification and content-blocking rules under the Online Safety Act now requiring ISPs and platforms to restrict access based on identity and location. The European Union is moving toward its own tightening framework of digital regulation, content controls, and age/identity verification mandates, and it is reasonable to expect the EU to follow the same path the UK has already started down. As these rules mature, the same pressure will eventually land on ISPs: not just blocking specific content, but blocking the tools people use to route around blocks — the same trajectory China already walked. Conventional VPN protocols are relatively easy to fingerprint and blocklist once a regulator decides to go after them.
 
@@ -64,7 +66,6 @@ The portal displays a QR code and connection link for your proxy.
 
 Other VLESS+REALITY-compatible clients will also work — V2Box and Hiddify are simply the ones this project has been verified against.
 
-
 ## Disclaimer
 
-This solution reflects the most up to date and sophisticated stack in July 2026. Censorship is a cat and mouse game and eventually this solution will cease working. When it does, there will be new solutions. Carpe Diem, enjoy while it still working.
+This solution reflects the most up to date and sophisticated stack in July 2026. Censorship is a cat and mouse game and eventually this solution will cease working. When it does, there will be new solutions. Carpe Diem, enjoy while it's still working.
