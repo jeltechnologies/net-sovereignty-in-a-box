@@ -34,7 +34,7 @@ docker compose logs -f newt
 
 # Run the portal locally without Docker (needs the same env vars docker-compose.yml sets)
 cd portal && npm install
-VLESS_LINK=... UUID=... PUBLIC_KEY=... SHORT_ID=... SNI_DOMAIN=... XRAY_PORT=443 PUBLIC_IP=... node server.js
+UUID=... PUBLIC_KEY=... SHORT_ID=... SNI_DOMAIN=... XRAY_PORT=443 node server.js
 ```
 
 ## Architecture notes
@@ -47,9 +47,13 @@ VLESS_LINK=... UUID=... PUBLIC_KEY=... SHORT_ID=... SNI_DOMAIN=... XRAY_PORT=443
   no framework: raw `http.createServer`, manual routing by `pathname`, inline HTML/CSS template string
   for `/`. Keep changes in this style rather than introducing a framework unless the scope grows
   significantly.
+- **The public IP is not hardcoded anywhere.** On startup, `server.js` fetches its own public IP from
+  `https://api.ipify.org` and uses it to build `VLESS_LINK` in memory; if that fetch fails, the process
+  exits and relies on Docker's `restart: unless-stopped` to retry. `PUBLIC_IP`/`VLESS_LINK` are no longer
+  environment variables — don't reintroduce them as hardcoded env vars in `docker-compose.yml`.
 - Portal routes: `/` (HTML status page), `/json` and `/api` (connection info as JSON), `/qr` (PNG QR
-  code of the VLESS link). All read from env vars set by `docker-compose.yml`; there's no config file for
-  the portal.
+  code of the VLESS link). All other connection details read from env vars set by `docker-compose.yml`;
+  there's no config file for the portal.
 - `newt` uses `network_mode: "service:portal"`, so it shares portal's network namespace rather than
   getting its own — this is what lets Pangolin route traffic to the portal without publishing a host
   port for it. Only `xray`'s port 443 is published directly (`ports:` on the `xray` service); `portal` is

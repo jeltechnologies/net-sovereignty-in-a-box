@@ -4,15 +4,24 @@ const url    = require('url');
 const QRCode = require('qrcode');
 
 const env = k => process.env[k] || '';
-const VLESS_LINK = env('VLESS_LINK');
 const PUBLIC_KEY = env('PUBLIC_KEY');
 const UUID       = env('UUID');
 const SHORT_ID   = env('SHORT_ID');
 const SNI_DOMAIN = env('SNI_DOMAIN');
 const XRAY_PORT  = env('XRAY_PORT') || '443';
-const PUBLIC_IP  = env('PUBLIC_IP');
 
 const PORT = 8080;
+
+let PUBLIC_IP  = '';
+let VLESS_LINK = '';
+
+async function fetchPublicIp() {
+  const res = await fetch('https://api.ipify.org');
+  if (!res.ok) throw new Error('ipify returned status ' + res.status);
+  const ip = (await res.text()).trim();
+  if (!ip) throw new Error('ipify returned an empty response');
+  return ip;
+}
 
 const esc = s => String(s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -154,13 +163,24 @@ footer{font-size:.68rem;color:#334155;margin-top:auto;
   res.end('Not found');
 }
 
-http.createServer((req, res) => {
-  handleRequest(req, res).catch(err => {
-    console.error(err);
-    if (!res.headersSent) { res.writeHead(500); }
-    res.end('Internal error');
+async function start() {
+  PUBLIC_IP = await fetchPublicIp();
+  VLESS_LINK = `vless://${UUID}@${PUBLIC_IP}:${XRAY_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${SNI_DOMAIN}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&type=tcp#Xray-REALITY`;
+
+  http.createServer((req, res) => {
+    handleRequest(req, res).catch(err => {
+      console.error(err);
+      if (!res.headersSent) { res.writeHead(500); }
+      res.end('Internal error');
+    });
+  }).listen(PORT, '0.0.0.0', () => {
+    console.log('Xray portal listening on :' + PORT);
+    console.log('Public IP: ' + PUBLIC_IP);
+    console.log('VLESS link: ' + VLESS_LINK);
   });
-}).listen(PORT, '0.0.0.0', () => {
-  console.log('Xray portal listening on :' + PORT);
-  console.log('VLESS link: ' + VLESS_LINK);
+}
+
+start().catch(err => {
+  console.error('Failed to determine public IP, cannot start portal:', err);
+  process.exit(1);
 });
