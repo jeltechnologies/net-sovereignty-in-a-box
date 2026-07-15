@@ -34,16 +34,16 @@ services:
     restart: unless-stopped
     networks:
       - xray-net
-    expose:
-      - "8080"
+    ports:
+      - "16810:8080"
     environment:
-      VLESS_LINK: 'vless://faf28d1f-dd18-4091-aa3f-f10419190a74@95.179.165.162:443?encryption=none&flow=xtls-rprx-vision&security=reality&sni=www.cloudflare.com&fp=chrome&pbk=NgQGJAT8JYwvzzIzfm_nt_OF2wAV-Rw1G2NdH_fHrB8&sid=f5c052938ba0aacf&type=tcp#Xray-REALITY'
+      VLESS_LINK: 'vless://faf28d1f-dd18-4091-aa3f-f10419190a74@70.34.211.38:443?encryption=none&flow=xtls-rprx-vision&security=reality&sni=www.cloudflare.com&fp=chrome&pbk=NgQGJAT8JYwvzzIzfm_nt_OF2wAV-Rw1G2NdH_fHrB8&sid=f5c052938ba0aacf&type=tcp#Xray-REALITY'
       UUID: "faf28d1f-dd18-4091-aa3f-f10419190a74"
       PUBLIC_KEY: "NgQGJAT8JYwvzzIzfm_nt_OF2wAV-Rw1G2NdH_fHrB8"
       SHORT_ID: "f5c052938ba0aacf"
       SNI_DOMAIN: "www.cloudflare.com"
       XRAY_PORT: "443"
-      PUBLIC_IP: "95.179.165.162"
+      PUBLIC_IP: "70.34.211.38"
     depends_on:
       - xray
 
