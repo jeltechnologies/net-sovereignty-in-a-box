@@ -4,13 +4,13 @@ This repository provides internet sovereignty and anti-censorship, powered by ba
 
 ## Why this exists
 
-For over a decade, China has run the most sophisticated internet censorship system in the world — the Great Firewall. In that same time, the people living behind it have run the world's most sophisticated censorship-resistance experiments. Every time the Firewall learned to detect and block a new proxy technique, engineers built the next one. a technology called **REALITY** is the current state of that arms race: instead of hiding traffic and hoping it isn't noticed, it disguises your connection as an ordinary, everyday visit to a trusted, high-traffic website (think Microsoft or Apple's own servers). To a censor doing deep packet inspection, your traffic looks indistinguishable from millions of other people innocently loading a legitimate site — because in the parts that matter, it genuinely uses that site's real TLS certificate and handshake. There's no fake certificate to fingerprint and no suspicious pattern to flag. This is why REALITY has held up where earlier protocols eventually got detected and blocked.
+For over a decade, China has run the most sophisticated internet censorship system in the world — the Great Firewall. In that same time, the people living behind it have run the world's most sophisticated censorship-resistance experiments. Every time the Firewall learned to detect and block a new proxy technique, engineers built the next one. A technology called **REALITY** is the current state of that arms race: instead of hiding traffic and hoping it isn't noticed, it disguises your connection as an ordinary, everyday visit to a trusted, high-traffic website (think Microsoft or Apple's own servers). To a censor doing deep packet inspection, your traffic looks indistinguishable from millions of other people innocently loading a legitimate site — because in the parts that matter, it genuinely uses that site's real TLS certificate and handshake. There's no fake certificate to fingerprint and no suspicious pattern to flag. This is why REALITY has held up where earlier protocols eventually got detected and blocked.
 
-> **Note:** the camouflage domain (e.g. `www.microsoft.com`) is only used for disguise — your traffic is never routed through it.
+> **Note:** the camouflage domain (e.g. `www.microsoft.com`) is only used for disguise — traffic is never routed through it.
 
 ## Why this project was made
 
-There are many tutorials and information available on the internet on V2Ray and REALITY, but this material is either very technical, or takes many manual steps, file editing and troubleshooting, or is written in languages of countries that apply active censorship, like Chinese. This project aims to make it extremely easy to deploy a complete solution, without needing networking expertise.
+There are many tutorials and information available on the internet on V2Ray and REALITY, but this material is either very technical, or takes many manual steps like file editing and troubleshooting. The best material is written in languages of countries that apply active censorship, like Chinese. This project aims to make it extremely easy to deploy a complete solution, without needing networking expertise.
 
 ## Why this matters beyond China
 
