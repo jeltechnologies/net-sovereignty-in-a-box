@@ -19,10 +19,10 @@ services:
     environment:
       # Camouflage domain used only on first start, when the identity is
       # generated (see the top-level comment above). Edit this value
-      # directly if www.microsoft.com isn't a good fit for you — it must be
+      # directly if swcdn.apple.com isn't a good fit for you — it must be
       # a globally trusted, unblocked, high-traffic domain your local ISP
       # lets you reach freely (other options: aspnetcdn.com, www.apple.com,
-      # swcdn.apple.com).
+      # www.microsoft.com).
       SNI_DOMAIN: swcdn.apple.com
 
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────

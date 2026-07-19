@@ -71,7 +71,7 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme node server.js
   (`init/generate-identity.sh`, image built `FROM teddysun/xray` so the real `xray` binary is
   available) runs once before `xray`/`portal` start: if `data/config.json` doesn't exist yet it's copied
   from the baked-in template, then (unless `identity.env` already exists) it generates a UUID, a random
-  16-hex-char short ID, an SNI domain (`SNI_DOMAIN`, hardcoded to `www.microsoft.com` in
+  16-hex-char short ID, an SNI domain (`SNI_DOMAIN`, hardcoded to `swcdn.apple.com` in
   `docker-compose.yaml` — edit it there to change), and a REALITY keypair via `xray x25519` (output parsed from its `PrivateKey:` / `Password (PublicKey):`
   lines — reparse both if a future `xray` version changes that wording). All of these are patched into
   `config.json` via `jq` and written to `identity.env` (including `PUBLIC_KEY`) as the "already
