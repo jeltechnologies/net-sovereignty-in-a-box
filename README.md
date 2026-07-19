@@ -10,7 +10,7 @@ This isn't just a China problem. The UK's Online Safety Act already requires ISP
 
 ## What you get
 
-- A cleaner alternative to Tor, which a growing number of people in the UK are starting to turn to — Tor is also where a lot of shady and illegal activity lives, whereas this is just your own, family-friendly uncensored internet access.
+- A cleaner alternative to Tor, which a growing number of people in the UK are starting to use — Tor is also where a lot of shady and illegal activity lives, whereas this is just your own, family-friendly uncensored internet access.
 - A compete solutiom, which takes about 15 minutes to deploy, with miminal configuration.
 - A private VLESS+REALITY proxy, with a unique identity and keypair generated on first start — nothing shared, nothing hardcoded.
 - A web portal with a ready-to-scan QR code and connection link.
