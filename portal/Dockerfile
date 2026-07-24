@@ -1,7 +1,12 @@
-FROM node:20-alpine
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /build
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
+COPY src ./src
+RUN mvn -q -B -DskipTests package
+
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY package.json .
-RUN npm install --omit=dev --no-audit --no-fund
-COPY server.js .
+COPY --from=build /build/target/portal.jar app.jar
 EXPOSE 8080
-CMD ["node", "server.js"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

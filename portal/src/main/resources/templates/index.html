@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#F7F5EF"/>
+<title>Access Pass · Xray Portal</title>
+<style>
+  :root{
+    --page:      #EFEAD9;
+    --paper:     #F7F5EF;
+    --stub:      #EFEBDD;
+    --ink:       #16213E;
+    --label:     #8A8471;
+    --accent:    #B54E1D;
+    --line:      #D9D2BC;
+    --success:   #2F7D4F;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--page);
+    background-image:
+      radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px 16px 24px;
+  }
+
+  a{color:var(--accent)}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .pass{
+    width:100%;
+    max-width:720px;
+    background:var(--paper);
+    border-radius:18px;
+    box-shadow:0 1px 2px rgba(22,33,62,.06), 0 18px 40px -20px rgba(22,33,62,.28);
+    overflow:hidden;
+    opacity:0;
+    transform:translateY(10px) rotate(-.3deg);
+    animation:print-in .5s cubic-bezier(.2,.7,.3,1) .05s forwards;
+  }
+  @keyframes print-in{to{opacity:1;transform:translateY(0) rotate(0)}}
+  @media (prefers-reduced-motion: reduce){
+    .pass{animation:none;opacity:1;transform:none}
+  }
+
+  .pass-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    font-family:var(--mono);
+    font-size:.72rem;
+    font-weight:600;
+    letter-spacing:.14em;
+    color:var(--ink);
+    text-transform:uppercase;
+  }
+  .stamp{
+    font-family:var(--mono);
+    font-size:.62rem;
+    font-weight:700;
+    letter-spacing:.16em;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    border-radius:4px;
+    padding:3px 8px;
+    transform:rotate(-3deg);
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+  }
+  .stamp::before{
+    content:"";
+    width:6px;height:6px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 3px rgba(181,78,29,.18);
+  }
+
+  .pass-body{
+    display:grid;
+    grid-template-columns:200px 1px 1fr;
+    align-items:stretch;
+  }
+
+  .stub{
+    background:var(--stub);
+    padding:22px 18px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:10px;
+  }
+  .qr{
+    width:100%;
+    max-width:160px;
+    height:auto;
+    background:#fff;
+    border-radius:8px;
+    padding:8px;
+    box-shadow:0 1px 3px rgba(22,33,62,.12);
+  }
+  .stub-caption{
+    margin:0;
+    font-family:var(--mono);
+    font-size:.68rem;
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink);
+  }
+  .stub-apps{
+    margin:0;
+    font-size:.68rem;
+    color:var(--label);
+    line-height:1.5;
+  }
+
+  .seam{
+    position:relative;
+    background:
+      linear-gradient(var(--line), var(--line)) center / 2px 100% no-repeat;
+  }
+  .seam::before,.seam::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    width:22px;height:22px;
+    background:var(--page);
+    border-radius:50%;
+    transform:translateX(-50%);
+  }
+  .seam::before{top:-11px}
+  .seam::after{bottom:-11px}
+
+  .manifest{padding:20px 22px 18px}
+  .manifest-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:6px 14px;
+    margin-bottom:14px;
+  }
+  .proto{
+    font-family:var(--mono);
+    font-size:.68rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--label);
+  }
+  .ticket-no{
+    font-family:var(--mono);
+    font-size:.72rem;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .ticket-no span{color:var(--accent)}
+
+  .fields{margin:0}
+  .field{
+    display:grid;
+    grid-template-columns:104px 1fr auto;
+    align-items:center;
+    gap:10px;
+    padding:9px 0;
+    border-top:1px solid var(--line);
+  }
+  .field:first-of-type{border-top:none}
+  .field dt{
+    font-size:.66rem;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--label);
+  }
+  .field dd{
+    margin:0;
+    min-width:0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .val{
+    font-family:var(--mono);
+    font-size:.82rem;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .copy{
+    font-family:var(--sans);
+    font-size:.68rem;
+    font-weight:600;
+    letter-spacing:.03em;
+    color:var(--accent);
+    background:transparent;
+    border:1px solid transparent;
+    border-radius:6px;
+    padding:4px 9px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background-color .15s, border-color .15s, color .15s;
+  }
+  .copy:hover{background:rgba(181,78,29,.08)}
+  .copy.is-copied{color:var(--success);background:rgba(47,125,79,.1)}
+
+  .barcode{
+    border-top:0;
+    padding:18px 22px 22px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .barcode-label{
+    margin:0 0 4px;
+    font-size:.66rem;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--label);
+  }
+  .barcode-value{
+    display:block;
+    font-family:var(--mono);
+    font-size:.72rem;
+    line-height:1.5;
+    color:var(--ink);
+    word-break:break-all;
+    max-width:460px;
+  }
+  .barcode > div:first-child{flex:1;min-width:220px}
+  .copy-primary{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:.72rem;
+  }
+  .copy-primary:hover{background:#0f1730}
+  .copy-primary.is-copied{background:var(--success);border-color:var(--success);color:#fff}
+
+  .seam-h{
+    grid-column:1 / -1;
+    position:relative;
+    height:1px;
+    background:var(--line);
+    margin:0 22px;
+  }
+  .seam-h::before,.seam-h::after{
+    content:"";
+    position:absolute;
+    top:50%;
+    width:20px;height:20px;
+    background:var(--page);
+    border-radius:50%;
+    transform:translateY(-50%);
+  }
+  .seam-h::before{left:-32px}
+  .seam-h::after{right:-32px}
+
+  footer{
+    margin-top:22px;
+    font-size:.7rem;
+    color:var(--label);
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  footer a{text-decoration:none;font-weight:600}
+  footer a:hover{text-decoration:underline}
+
+  @media (max-width:640px){
+    .pass-body{grid-template-columns:1fr}
+    .seam{display:none}
+    .stub{padding-bottom:16px}
+    .field{grid-template-columns:88px 1fr auto}
+    .barcode-value{max-width:none}
+  }
+</style>
+</head>
+<body>
+
+<main class="pass">
+  <div class="pass-head">
+    <span class="brand">&#10022; Access Pass</span>
+    <span class="stamp">Live</span>
+  </div>
+
+  <div class="pass-body">
+    <div class="stub">
+      <img class="qr" src="/qr" alt="QR code for the VLESS connection link"/>
+      <p class="stub-caption">Scan to board</p>
+      <p class="stub-apps">V2Box &middot; Hiddify &middot; v2rayNG &middot; Shadowrocket</p>
+    </div>
+
+    <div class="seam" aria-hidden="true"></div>
+
+    <div class="manifest">
+      <div class="manifest-head">
+        <span class="proto" th:text="${info.protocol.toUpperCase()} + ' &middot; REALITY &middot; ' + ${info.flow} + ' &middot; ' + ${info.network.toUpperCase()}">VLESS &middot; REALITY &middot; xtls-rprx-vision &middot; TCP</span>
+        <span class="ticket-no">No. <span th:text="${info.shortId}">a1b2c3d4e5f6a7b8</span></span>
+      </div>
+
+      <dl class="fields">
+        <div class="field">
+          <dt>Server</dt>
+          <dd>
+            <span class="val" th:text="${info.address}">203.0.113.10</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.address}">Copy</button>
+          </dd>
+        </div>
+        <div class="field">
+          <dt>Port</dt>
+          <dd>
+            <span class="val" th:text="${info.port}">443</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.port}">Copy</button>
+          </dd>
+        </div>
+        <div class="field">
+          <dt>SNI</dt>
+          <dd>
+            <span class="val" th:text="${info.sni}">swcdn.apple.com</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.sni}">Copy</button>
+          </dd>
+        </div>
+        <div class="field">
+          <dt>UUID</dt>
+          <dd>
+            <span class="val" th:text="${info.uuid}">c0ffee-uuid</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.uuid}">Copy</button>
+          </dd>
+        </div>
+        <div class="field">
+          <dt>Public key</dt>
+          <dd>
+            <span class="val" th:text="${info.publicKey}">pbk...</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.publicKey}">Copy</button>
+          </dd>
+        </div>
+        <div class="field">
+          <dt>Short ID</dt>
+          <dd>
+            <span class="val" th:text="${info.shortId}">a1b2c3d4</span>
+            <button class="copy" type="button" data-copy th:attr="data-value=${info.shortId}">Copy</button>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="seam-h" aria-hidden="true"></div>
+
+  <div class="barcode">
+    <div>
+      <p class="barcode-label">VLESS link</p>
+      <code class="barcode-value" th:text="${info.vlessLink}">vless://...</code>
+    </div>
+    <button class="copy copy-primary" type="button" data-copy th:attr="data-value=${info.vlessLink}">Copy link</button>
+  </div>
+</main>
+
+<footer>
+  <a href="/json">/json</a><span aria-hidden="true">&middot;</span><a href="/qr">/qr</a>
+</footer>
+
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    var defaultLabel = btn.textContent;
+    btn.addEventListener('click', function(){
+      var value = String(btn.dataset.value);
+      navigator.clipboard.writeText(value).then(function(){
+        btn.textContent = 'Copied';
+        btn.classList.add('is-copied');
+        setTimeout(function(){
+          btn.textContent = defaultLabel;
+          btn.classList.remove('is-copied');
+        }, 1600);
+      });
+    });
+  });
+</script>
+</body>
+</html>

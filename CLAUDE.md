@@ -4,17 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Docker Compose stack that runs a personal VLESS+REALITY proxy (Xray-core) fronted by a tiny Node.js
-status portal. Both `xray` (443) and `portal` (16810) are published directly on the host.
+A Docker Compose stack that runs a personal VLESS+REALITY proxy (Xray-core) fronted by a small Spring
+Boot status portal. Both `xray` (443) and `portal` (16810) are published directly on the host.
 
 ```
 init (teddysun/xray base, ./init) — one-shot init container, generates client identity + REALITY keypair on first start
 xray  (teddysun/xray)  — VLESS+REALITY proxy server, config-driven, port 443
-portal (Node 20, ./portal) — status page + JSON/QR endpoints for the VLESS link, port 8080 internally, published on 16810
+portal (Spring Boot 4.1 / Java 21, ./portal) — status page + JSON/QR endpoints for the VLESS link, port 8080 internally, published on 16810
 ```
 
-All three are wired together in `docker-compose.yaml`. There is no build tooling, test suite, or linter
-in this repo — `portal` and `init`'s `generate-identity.sh` are the only things with actual code.
+All three are wired together in `docker-compose.yaml`. There is no test suite or linter in this repo.
+`portal` is a Maven project (the only build tooling here); `init`'s `generate-identity.sh` is a plain
+shell script.
 
 ## Releases
 
@@ -29,7 +30,7 @@ built here — it stays the upstream `teddysun/xray:latest` image.
 # Start/rebuild the whole stack
 docker compose up -d --build
 
-# Rebuild just the portal after editing portal/server.js
+# Rebuild just the portal after editing its Java sources
 docker compose up -d --build portal
 
 # Logs
@@ -38,8 +39,8 @@ docker compose logs -f portal
 
 # Run the portal locally without Docker (needs an identity.env at /etc/xray/identity.env,
 # see "Client identity" below, plus the same XRAY_PORT env var docker-compose.yaml sets)
-cd portal && npm install
-XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme node server.js
+cd portal && mvn -q -DskipTests package
+XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/portal.jar
 ```
 
 ## Architecture notes
@@ -56,10 +57,11 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme node server.js
   in `docker-compose.yaml` on purpose** — the portal exposes the UUID, REALITY keys, and VLESS link, so
   operators are forced to pick real credentials by editing those two lines directly rather than running
   with a guessable default like `admin`/`admin`. Until both are set, every route (including `/qr` and
-  `/json`) returns a `500` error page instead of serving connection details; `server.js` checks this by
-  testing whether both env vars are non-empty. Once both are set and the service is recreated, every
-  route requires HTTP Basic Auth — browsers show their native login prompt via the `401` +
-  `WWW-Authenticate` response — checked with `crypto.timingSafeEqual` in `server.js`.
+  `/json`) returns a `500` error page instead of serving connection details; `PortalAuthFilter` checks
+  this by testing whether both env vars are non-empty (`PortalProperties#authConfigured`). Once both
+  are set and the service is recreated, every route requires HTTP Basic Auth — browsers show their
+  native login prompt via the `401` + `WWW-Authenticate` response — compared with
+  `MessageDigest.isEqual` in `PortalAuthFilter`.
 
 - **Client identity — UUID, short ID, SNI/serverName, and the REALITY X25519 keypair — is fully
   auto-generated on first start**, nothing is hardcoded. All three services mount the top-level
@@ -85,14 +87,25 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme node server.js
 - **The generator script writes into the existing file inode (`cat > file`), never `mv`** — `mv` from
   inside the (root) container replaces the inode and leaves `config.json` root-owned and `0600`,
   unreadable by the host user. If you edit `generate-identity.sh`, preserve this.
-- **`portal/server.js` is intentionally a single dependency-free-ish file** (only `qrcode` from npm) with
-  no framework: raw `http.createServer`, manual routing by `pathname`, inline HTML/CSS template string
-  for `/`. Keep changes in this style rather than introducing a framework unless the scope grows
-  significantly.
-- **The public IP is not hardcoded anywhere.** On startup, `server.js` fetches its own public IP from
-  `https://api.ipify.org` and uses it to build `VLESS_LINK` in memory; if that fetch fails, the process
-  exits and relies on Docker's `restart: unless-stopped` to retry. `PUBLIC_IP`/`VLESS_LINK` are no longer
-  environment variables — don't reintroduce them as hardcoded env vars in `docker-compose.yaml`.
+- **`portal` is a Spring Boot 4.1 (Spring Framework 7) / Java 21 Maven project**, package
+  `com.jeltechnologies.portal`. No Lombok — config binding and data shapes use plain Java records
+  (`PortalProperties`, `Identity`, `ConnectionInfo`). Layout: `config/` (env-var-backed
+  `@ConfigurationProperties` record), `identity/` (parses `identity.env`), `connection/` (public-IP
+  lookup + the one-shot `ConnectionInfoProvider` bean built at startup), `security/PortalAuthFilter`
+  (a plain `jakarta.servlet.Filter` — no Spring Security dependency, kept in the spirit of the
+  project's minimal-deps philosophy), `web/` (the `PortalController` routes plus `QrCodeService`,
+  which wraps ZXing). The UI is a single Thymeleaf template
+  (`src/main/resources/templates/index.html`) with inline `<style>`/`<script>` — no separate CSS/JS
+  build step, matching this project's preference for keeping the portal to as few moving parts as
+  practical. Keep changes in this style rather than pulling in more framework surface (e.g. Spring
+  Security, a JS bundler) unless the scope genuinely grows to need it.
+- **The public IP is not hardcoded anywhere.** At startup, `ConnectionInfoProvider`'s constructor
+  fetches the public IP from `https://api.ipify.org` (via `java.net.http.HttpClient`) and uses it to
+  build the VLESS link once, held in memory for the life of the process. If that fetch — or identity
+  loading — fails, the exception propagates out of Spring context startup; `PortalApplication.main`
+  catches it, logs, and calls `System.exit(1)`, relying on Docker's `restart: unless-stopped` to retry.
+  `PUBLIC_IP`/`VLESS_LINK` are not environment variables — don't reintroduce them as hardcoded env vars
+  in `docker-compose.yaml`.
 - Portal routes: `/` (HTML status page), `/json` and `/api` (connection info as JSON), `/qr` (PNG QR
   code of the VLESS link). All other connection details read from env vars set by `docker-compose.yaml`;
   there's no config file for the portal.

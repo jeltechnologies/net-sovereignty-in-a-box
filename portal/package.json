@@ -1,8 +1,0 @@
-{
-  "name": "xray-portal",
-  "version": "1.0.0",
-  "main": "server.js",
-  "dependencies": {
-    "qrcode": "^1.5.3"
-  }
-}

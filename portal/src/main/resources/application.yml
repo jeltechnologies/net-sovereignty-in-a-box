@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: portal
+  jackson:
+    serialization:
+      indent-output: true
+
+xray-port: ${XRAY_PORT:443}
+portal-user-name: ${PORTAL_USER_NAME:}
+portal-password: ${PORTAL_PASSWORD:}
+
+logging:
+  level:
+    root: INFO
