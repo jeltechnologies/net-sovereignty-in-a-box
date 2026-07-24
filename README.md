@@ -75,6 +75,15 @@ The portal displays a QR code and connection link for your proxy.
 
 Other VLESS+REALITY-compatible clients will also work — V2Box and Hiddify are simply the ones this project has been verified against.
 
+### Using v2rayN
+
+v2rayN also works, with one catch: by default it may run your profile on the **sing-box** core, which
+has been observed to fail VLESS+REALITY+Vision connections against this stack's Xray-core server with
+a `reality verification failed` error on every single request — even when the UUID, public key, short
+ID, and server address in the profile are all correct. If you hit this, switch the profile (or the
+global default) to the **Xray core** instead — in v2rayN, check the core selection under Settings for
+this profile. This resolved the issue in testing; the server-side config needed no changes.
+
 ## Disclaimer
 
 This reflects the current state of the art as of July 2026. Censorship is a cat-and-mouse game — this will eventually stop working, and something else will replace it.

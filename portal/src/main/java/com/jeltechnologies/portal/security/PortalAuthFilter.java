@@ -5,25 +5,29 @@ import com.jeltechnologies.portal.config.PortalProperties;
 import com.jeltechnologies.portal.tls.AcmeChallengeController;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Base64;
 
 @Component
 public class PortalAuthFilter extends HttpFilter {
 
+    public static final String AUTH_COOKIE_NAME = "portal_auth";
+    private static final String LOGIN_PATH = "/login";
+
     private final PortalProperties properties;
     private final AcmeProperties acmeProperties;
+    private final PortalCredentials credentials;
 
-    public PortalAuthFilter(PortalProperties properties, AcmeProperties acmeProperties) {
+    public PortalAuthFilter(PortalProperties properties, AcmeProperties acmeProperties,
+                             PortalCredentials credentials) {
         this.properties = properties;
         this.acmeProperties = acmeProperties;
+        this.credentials = credentials;
     }
 
     @Override
@@ -36,7 +40,7 @@ public class PortalAuthFilter extends HttpFilter {
         }
 
         // The plain-HTTP connector exists only to answer ACME challenges — never let it serve
-        // real portal content or accept Basic Auth credentials over cleartext HTTP.
+        // real portal content or accept credentials over cleartext HTTP.
         if (req.getLocalPort() == acmeProperties.httpPort()) {
             res.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -50,40 +54,48 @@ public class PortalAuthFilter extends HttpFilter {
             return;
         }
 
-        if (!isAuthorized(req)) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.setHeader("WWW-Authenticate", "Basic realm=\"Xray Portal\", charset=\"UTF-8\"");
-            res.setContentType("text/plain");
-            res.getWriter().write("Authentication required");
+        // The login page (and its form submission) must stay reachable while unauthenticated —
+        // it's the only way to become authenticated in the first place.
+        if (LOGIN_PATH.equals(req.getRequestURI())) {
+            chain.doFilter(req, res);
             return;
         }
 
-        chain.doFilter(req, res);
-    }
-
-    private boolean isAuthorized(HttpServletRequest req) {
         String header = req.getHeader("Authorization");
-        if (header == null || !header.startsWith("Basic ")) {
-            return false;
+        if (header != null && header.startsWith("Basic ")) {
+            // Presented explicitly (curl -u, scripts) — honor real Basic Auth semantics here,
+            // no redirect to the HTML login page, so existing scripted/API usage keeps working.
+            if (credentials.isValidBase64(header.substring(6))) {
+                chain.doFilter(req, res);
+            } else {
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.setContentType("text/plain");
+                res.getWriter().write("Authentication required");
+            }
+            return;
         }
-        String decoded;
-        try {
-            decoded = new String(Base64.getDecoder().decode(header.substring(6)), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
-            return false;
+
+        String cookieValue = readCookie(req);
+        if (cookieValue != null && credentials.isValidBase64(cookieValue)) {
+            chain.doFilter(req, res);
+            return;
         }
-        int idx = decoded.indexOf(':');
-        if (idx == -1) {
-            return false;
-        }
-        String user = decoded.substring(0, idx);
-        String pass = decoded.substring(idx + 1);
-        return safeEqual(user, properties.portalUserName()) && safeEqual(pass, properties.portalPassword());
+
+        // No native WWW-Authenticate challenge here on purpose — that's what triggers the
+        // browser's own ugly login popup. Send browsers to our own login page instead.
+        res.sendRedirect(LOGIN_PATH);
     }
 
-    private static boolean safeEqual(String a, String b) {
-        return MessageDigest.isEqual(
-                a.getBytes(StandardCharsets.UTF_8),
-                b.getBytes(StandardCharsets.UTF_8));
+    private static String readCookie(HttpServletRequest req) {
+        Cookie[] cookies = req.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (AUTH_COOKIE_NAME.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }

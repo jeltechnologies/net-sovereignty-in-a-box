@@ -59,15 +59,25 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/p
   (e.g. `docker compose up -d portal`) to pick up the change. Keep `.env.example` in sync with any new
   variable added to `docker-compose.yaml`'s `environment:` blocks.
 
-- **The portal is protected by HTTP Basic Auth, `PORTAL_USER_NAME`/`PORTAL_PASSWORD`, both left blank
-  by default (unset in `.env.example`)** — the portal exposes the UUID, REALITY keys, and VLESS link, so
-  operators are forced to pick real credentials by setting both in `.env` rather than running
+- **The portal is protected by Basic Auth credentials, `PORTAL_USER_NAME`/`PORTAL_PASSWORD`, both left
+  blank by default (unset in `.env.example`)** — the portal exposes the UUID, REALITY keys, and VLESS
+  link, so operators are forced to pick real credentials by setting both in `.env` rather than running
   with a guessable default like `admin`/`admin`. Until both are set, every route (including `/qr` and
   `/json`) returns a `500` error page instead of serving connection details; `PortalAuthFilter` checks
   this by testing whether both env vars are non-empty (`PortalProperties#authConfigured`). Once both
-  are set and the service is recreated, every route requires HTTP Basic Auth — browsers show their
-  native login prompt via the `401` + `WWW-Authenticate` response — compared with
-  `MessageDigest.isEqual` in `PortalAuthFilter`.
+  are set and the service is recreated, every route requires authentication, checked against
+  `PORTAL_USER_NAME`/`PORTAL_PASSWORD` with `MessageDigest.isEqual` (`PortalCredentials`) either way —
+  but the credentials can arrive two ways:
+  - **Browsers** get a custom login page (`GET /login`, `web/LoginController`, `templates/login.html`)
+    instead of the browser's native Basic Auth popup. `PortalAuthFilter` never sends a
+    `WWW-Authenticate` challenge — a request with no valid `Authorization` header and no valid auth
+    cookie is 302-redirected to `/login`. A successful `POST /login` sets an `HttpOnly`, `Secure`,
+    `SameSite=Strict` cookie (`PortalAuthFilter.AUTH_COOKIE_NAME`, 30-day expiry) whose value is the
+    exact same base64(`user:pass`) a real Basic Auth header would carry — same credential check either
+    way, just delivered without the ugly native prompt.
+  - **Scripts/`curl -u`** keep working unchanged: a request that already carries an `Authorization:
+    Basic ...` header is validated directly (200 or 401, no redirect), so nothing programmatic that
+    relied on real Basic Auth broke.
 
 - **Client identity — UUID, short ID, SNI/serverName, and the REALITY X25519 keypair — is fully
   auto-generated on first start**, nothing is hardcoded. All three services mount the top-level
@@ -148,13 +158,15 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/p
   `com.jeltechnologies.portal`. No Lombok — config binding and data shapes use plain Java records
   (`PortalProperties`, `AcmeProperties`, `Identity`, `ConnectionInfo`). Layout: `config/` (env-var-backed
   `@ConfigurationProperties` records), `identity/` (parses `identity.env`), `connection/` (public-IP
-  lookup + the one-shot `ConnectionInfoProvider` bean built at startup), `security/PortalAuthFilter`
-  (a plain `jakarta.servlet.Filter` — no Spring Security dependency, kept in the spirit of the
-  project's minimal-deps philosophy), `tls/` (self-signed-or-Let's-Encrypt HTTPS, see "TLS / HTTPS"
-  below), `web/` (the `PortalController` routes plus `QrCodeService`, which wraps ZXing). The UI is a
-  single Thymeleaf template
-  (`src/main/resources/templates/index.html`) with inline `<style>`/`<script>` — no separate CSS/JS
-  build step, matching this project's preference for keeping the portal to as few moving parts as
+  lookup + the one-shot `ConnectionInfoProvider` bean built at startup), `security/` (`PortalAuthFilter`,
+  a plain `jakarta.servlet.Filter` — no Spring Security dependency, kept in the spirit of the
+  project's minimal-deps philosophy — plus `PortalCredentials`, the shared constant-time credential
+  check both the filter and the login form use), `tls/` (self-signed-or-Let's-Encrypt HTTPS, see
+  "TLS / HTTPS" below), `web/` (the `PortalController` routes, `LoginController` for `/login`, plus
+  `QrCodeService`, which wraps ZXing). The UI is Thymeleaf templates
+  (`src/main/resources/templates/index.html`, `login.html`) with inline `<style>`/`<script>` — no
+  separate CSS/JS build step, matching this project's preference for keeping the portal to as few
+  moving parts as
   practical. Keep changes in this style rather than pulling in more framework surface (e.g. Spring
   Security, a JS bundler) unless the scope genuinely grows to need it.
 - **The public IP is not hardcoded anywhere.** At startup, `ConnectionInfoProvider`'s constructor

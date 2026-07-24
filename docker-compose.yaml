@@ -72,6 +72,10 @@ services:
       - ./data/tls:/etc/xray/tls
     environment:
       XRAY_PORT: "${XRAY_PORT:-443}"
+      # External port the portal is published on (the "16810" side of the "16810:8080"
+      # mapping above) — purely so the portal can print its own URL at startup, see
+      # ConnectionInfoProvider. Only change this if you also change the port mapping above.
+      PORTAL_PORT: "${PORTAL_PORT:-16810}"
       # Optional. Point a real domain's DNS A/AAAA record at this server and set it in
       # .env to get an automatically issued and renewed Let's Encrypt certificate —
       # requires port 80 above to be reachable from the internet (forward it on your

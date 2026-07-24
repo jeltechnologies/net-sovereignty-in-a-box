@@ -20,6 +20,7 @@ spring:
             private-key: file:/etc/xray/tls/active.key
 
 xray-port: ${XRAY_PORT:443}
+portal-port: ${PORTAL_PORT:16810}
 portal-user-name: ${PORTAL_USER_NAME:}
 portal-password: ${PORTAL_PASSWORD:}
 domain: ${DOMAIN:}

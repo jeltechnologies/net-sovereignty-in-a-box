@@ -39,8 +39,10 @@ public class ConnectionInfoProvider {
                 identity.sniDomain(), identity.publicKey(), identity.shortId(), "chrome", "tcp",
                 location, vlessLink);
 
+        String portalHost = properties.domainConfigured() ? properties.domain() : publicIp;
         log.info("Public IP: {}", publicIp);
         log.info("VLESS link: {}", vlessLink);
+        log.info("Portal: https://{}:{}", portalHost, properties.portalPort());
     }
 
     public ConnectionInfo connectionInfo() {
