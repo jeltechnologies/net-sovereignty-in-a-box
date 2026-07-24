@@ -35,16 +35,21 @@ The stack generates its own identity, keys, and config automatically on first st
 
 3. **Install Docker** on the VPS.
 
-4. **Add the `docker-compose.yaml` file** to the VPS. Download it from [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml) and place it in a folder on your VPS.
+4. **Add the `docker-compose.yaml` and `.env.example` files** to the VPS. Download them from
+   [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml)
+   and [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/.env.example)
+   and place them in the same folder on your VPS. Copy `.env.example` to `.env` — this is the file
+   you'll actually edit; it's gitignored so your real credentials never end up in any repo.
 
-5. **Set portal credentials.** Open `docker-compose.yaml` and fill in `PORTAL_USER_NAME` and `PORTAL_PASSWORD` under the `portal` service's `environment:` section — they're blank by default, and the portal refuses to show your connection details until both are set.
+5. **Set portal credentials.** Open `.env` and fill in `PORTAL_USER_NAME` and `PORTAL_PASSWORD` —
+   they're blank by default, and the portal refuses to show your connection details until both are set.
 
 6. **(Optional) Point a domain at it for a trusted HTTPS certificate.** The portal is HTTPS-only and
    works out of the box with a self-signed certificate — your browser will show a one-time warning
    to click past. If you'd rather not see that, point a domain's DNS A/AAAA record at your VPS's IP
-   and set `DOMAIN` under the `portal` service's `environment:` section; the stack then automatically
-   obtains and renews a real certificate from Let's Encrypt (this needs port 80 reachable from the
-   internet, which the stack already publishes for you).
+   and set `DOMAIN` in `.env`; the stack then automatically obtains and renews a real certificate from
+   Let's Encrypt (this needs port 80 reachable from the internet, which the stack already publishes
+   for you).
 
 7. **Run it:**
    ```

@@ -18,12 +18,12 @@ services:
       - ./data:/etc/xray
     environment:
       # Camouflage domain used only on first start, when the identity is
-      # generated (see the top-level comment above). Edit this value
-      # directly if swcdn.apple.com isn't a good fit for you — it must be
-      # a globally trusted, unblocked, high-traffic domain your local ISP
-      # lets you reach freely (other options: aspnetcdn.com, www.apple.com,
-      # www.microsoft.com).
-      SNI_DOMAIN: swcdn.apple.com
+      # generated (see the top-level comment above). Set in .env if
+      # swcdn.apple.com isn't a good fit for you — it must be a globally
+      # trusted, unblocked, high-traffic domain your local ISP lets you
+      # reach freely (other options: aspnetcdn.com, www.apple.com,
+      # www.microsoft.com). See .env.example.
+      SNI_DOMAIN: ${SNI_DOMAIN:-swcdn.apple.com}
 
   # ── 1. Xray core (VLESS+REALITY) ───────────────────────────────────────────
   xray:
@@ -71,18 +71,18 @@ services:
       # certificates), but stays read-only for identity.env/config.json, which it never writes.
       - ./data/tls:/etc/xray/tls
     environment:
-      XRAY_PORT: "443"
-      # Optional. Point a real domain's DNS A/AAAA record at this server and set it here
-      # to get an automatically issued and renewed Let's Encrypt certificate — requires
-      # port 80 above to be reachable from the internet (forward it on your router if
-      # you're behind NAT). Leave blank to keep using the self-signed certificate that's
-      # generated automatically on first start; HTTPS works either way.
-      DOMAIN: ""
+      XRAY_PORT: "${XRAY_PORT:-443}"
+      # Optional. Point a real domain's DNS A/AAAA record at this server and set it in
+      # .env to get an automatically issued and renewed Let's Encrypt certificate —
+      # requires port 80 above to be reachable from the internet (forward it on your
+      # router if you're behind NAT). Leave blank to keep using the self-signed
+      # certificate that's generated automatically on first start; HTTPS works either way.
+      DOMAIN: "${DOMAIN:-}"
       # Basic Auth for the portal. Left blank on purpose — the portal
       # exposes your UUID, REALITY keys, and VLESS link, so you must set
-      # both directly here before it will serve any connection details.
-      PORTAL_USER_NAME: ""
-      PORTAL_PASSWORD: ""
+      # both in .env before it will serve any connection details. See .env.example.
+      PORTAL_USER_NAME: "${PORTAL_USER_NAME:-}"
+      PORTAL_PASSWORD: "${PORTAL_PASSWORD:-}"
     depends_on:
       init:
         condition: service_completed_successfully
