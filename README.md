@@ -35,11 +35,13 @@ The stack generates its own identity, keys, and config automatically on first st
 
 3. **Install Docker** on the VPS.
 
-4. **Add the `docker-compose.yaml` and `.env.example` files** to the VPS. Download them from
-   [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml)
-   and [here](https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/.env.example)
-   and place them in the same folder on your VPS. Copy `.env.example` to `.env` — this is the file
-   you'll actually edit; it's gitignored so your real credentials never end up in any repo.
+4. **Download `docker-compose.yaml` and `.env`** into a folder on your VPS:
+   ```
+   curl -O https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/docker-compose.yaml
+   curl -o .env https://raw.githubusercontent.com/jeltechnologies/net-sovereignty-in-a-box/main/.env.example
+   ```
+   `.env` is the file you'll actually edit in the next step — it's gitignored so your real
+   credentials never end up in any repo.
 
 5. **Set portal credentials.** Open `.env` and fill in `PORTAL_USER_NAME` and `PORTAL_PASSWORD` —
    they're blank by default, and the portal refuses to show your connection details until both are set.
