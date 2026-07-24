@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 A Docker Compose stack that runs a personal VLESS+REALITY proxy (Xray-core) fronted by a small Spring
-Boot status portal. Both `xray` (443) and `portal` (16810) are published directly on the host.
+Boot status portal. Both `xray` (443) and `portal` (16810, HTTPS-only) are published directly on the
+host; the portal also publishes port 80, used solely for Let's Encrypt's ACME HTTP-01 challenge.
 
 ```
 init (teddysun/xray base, ./init) — one-shot init container, generates client identity + REALITY keypair on first start
@@ -37,8 +38,9 @@ docker compose up -d --build portal
 docker compose logs -f xray
 docker compose logs -f portal
 
-# Run the portal locally without Docker (needs an identity.env at /etc/xray/identity.env,
-# see "Client identity" below, plus the same XRAY_PORT env var docker-compose.yaml sets)
+# Run the portal locally without Docker (needs an identity.env AND a tls/active.{crt,key}
+# pair at /etc/xray/, see "Client identity" and "TLS / HTTPS" below, plus the same
+# XRAY_PORT env var docker-compose.yaml sets)
 cd portal && mvn -q -DskipTests package
 XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/portal.jar
 ```
@@ -86,15 +88,67 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/p
   own startup and won't notice an in-place edit on its own.
 - **The generator script writes into the existing file inode (`cat > file`), never `mv`** — `mv` from
   inside the (root) container replaces the inode and leaves `config.json` root-owned and `0600`,
-  unreadable by the host user. If you edit `generate-identity.sh`, preserve this.
+  unreadable by the host user. If you edit `generate-identity.sh`, preserve this. (The TLS block
+  described below is the one exception that does rename — see why there.)
+
+- **TLS / HTTPS.** The portal is HTTPS-only (`server.ssl.enabled: true` in `application.yml`); there
+  is no plain-HTTP portal route anymore. The cert Tomcat serves always lives at the same two paths,
+  `data/tls/active.crt` / `active.key` (mounted at `/etc/xray/tls`), referenced by a Spring Boot
+  **SSL Bundle** (`spring.ssl.bundle.pem.portal`) with `reload-on-update: true` — a background file
+  watcher hot-swaps a changed cert/key pair into Tomcat with **no restart**, which is what makes
+  unattended renewal possible.
+  - **Volume mount**: `portal`'s main `./data:/etc/xray:ro` mount is read-only, but
+    `docker-compose.yaml` adds a second, more specific mount, `./data/tls:/etc/xray/tls` (no
+    `:ro`), which overrides the parent for just that subdirectory — Docker resolves the more
+    specific bind mount for any path under it. The portal genuinely needs to write here (to
+    persist `acme-account.key`, and to install/renew Let's Encrypt certs), while `identity.env`/
+    `config.json` stay read-only since the portal never touches those. If you ever see ACME
+    renewal failing with a read-only-filesystem error, this mount is the first thing to check.
+  - **Self-signed fallback**: `generate-identity.sh` generates `active.crt`/`active.key` with
+    `openssl req -x509` the same way it's idempotent about `identity.env` — if the files already
+    exist, it leaves them alone (checked independently of the identity block, so rotating one
+    doesn't force-rotate the other). This is the one generator step that *does* write via a
+    temp-file-then-`mv` inside `openssl`'s own `-out`/`-keyout` flags, not the script itself — fine
+    here because, unlike `config.json`, nothing outside the `portal` container ever reads these
+    files.
+  - **Let's Encrypt via ACME (optional)**: set `DOMAIN` in `docker-compose.yaml`'s `portal.environment`
+    (blank by default) to a real hostname whose DNS A/AAAA record points at this server, and forward
+    port 80 to it (published as `80:8880`) — Let's Encrypt's HTTP-01 challenge requires port 80,
+    which is why it's separate from the main `16810:8080` HTTPS port. `tls/AcmeCertificateService`
+    drives this with `acme4j` (Apache 2.0, `org.shredzone.acme4j:acme4j-client`): on
+    `ApplicationReadyEvent` (on a background thread, so a slow/unreachable CA can never delay or
+    fail startup — the self-signed cert is already serving by then) and daily via `@Scheduled`, it
+    checks whether `active.crt` already covers `domain` and has >30 days left; if not, it runs the
+    full ACME order → HTTP-01 challenge → CSR → download flow and atomically replaces
+    `active.crt`/`active.key` (`Files.move(..., ATOMIC_MOVE)`, so the SSL bundle watcher never sees
+    a half-written pair). `tls/AcmeChallengeStore` + `tls/AcmeChallengeController` serve the
+    `/.well-known/acme-challenge/{token}` response; `tls/PlainHttpConnectorCustomizer` adds the extra
+    plain-HTTP Tomcat connector on `acme.http-port` (8880) that Let's Encrypt actually reaches. Any
+    ACME failure (DNS not propagated, port 80 unreachable, rate limits) is caught and logged — it
+    never crashes the app or disturbs the currently-active cert.
+  - **`PortalAuthFilter` carves out two exceptions** for this to work: requests to
+    `/.well-known/acme-challenge/**` skip both the "not configured" 500 and Basic Auth entirely
+    (any connector); requests landing on the plain-HTTP connector (`request.getLocalPort() ==
+    acme.http-port`) for *any other* path get an immediate 404 — this is what stops the insecure
+    port 80 from ever serving real portal content or prompting for Basic Auth credentials in
+    cleartext, even though Tomcat's servlet context is shared across both connectors.
+  - **`xray` keeps sole ownership of port 443.** REALITY's camouflage depends on port 443 behaving
+    exactly like a normal HTTPS server for the disguise domain — don't try to multiplex the portal
+    onto 443 via an SNI router or similar; that puts new infrastructure directly in the REALITY
+    traffic path for a "no port number in the URL" convenience that isn't worth the risk here.
+  - **Testing against Let's Encrypt without burning production rate limits**: set
+    `ACME_DIRECTORY_URL=acme://letsencrypt.org/staging` (not exposed in `docker-compose.yaml` by
+    default; add it under `portal.environment` temporarily) to point `acme4j` at the staging
+    directory, which issues untrusted-but-real certs against the same flow.
 - **`portal` is a Spring Boot 4.1 (Spring Framework 7) / Java 21 Maven project**, package
   `com.jeltechnologies.portal`. No Lombok — config binding and data shapes use plain Java records
-  (`PortalProperties`, `Identity`, `ConnectionInfo`). Layout: `config/` (env-var-backed
-  `@ConfigurationProperties` record), `identity/` (parses `identity.env`), `connection/` (public-IP
+  (`PortalProperties`, `AcmeProperties`, `Identity`, `ConnectionInfo`). Layout: `config/` (env-var-backed
+  `@ConfigurationProperties` records), `identity/` (parses `identity.env`), `connection/` (public-IP
   lookup + the one-shot `ConnectionInfoProvider` bean built at startup), `security/PortalAuthFilter`
   (a plain `jakarta.servlet.Filter` — no Spring Security dependency, kept in the spirit of the
-  project's minimal-deps philosophy), `web/` (the `PortalController` routes plus `QrCodeService`,
-  which wraps ZXing). The UI is a single Thymeleaf template
+  project's minimal-deps philosophy), `tls/` (self-signed-or-Let's-Encrypt HTTPS, see "TLS / HTTPS"
+  below), `web/` (the `PortalController` routes plus `QrCodeService`, which wraps ZXing). The UI is a
+  single Thymeleaf template
   (`src/main/resources/templates/index.html`) with inline `<style>`/`<script>` — no separate CSS/JS
   build step, matching this project's preference for keeping the portal to as few moving parts as
   practical. Keep changes in this style rather than pulling in more framework surface (e.g. Spring
@@ -106,8 +160,10 @@ XRAY_PORT=443 PORTAL_USER_NAME=admin PORTAL_PASSWORD=changeme java -jar target/p
   catches it, logs, and calls `System.exit(1)`, relying on Docker's `restart: unless-stopped` to retry.
   `PUBLIC_IP`/`VLESS_LINK` are not environment variables — don't reintroduce them as hardcoded env vars
   in `docker-compose.yaml`.
-- Portal routes: `/` (HTML status page), `/json` and `/api` (connection info as JSON), `/qr` (PNG QR
-  code of the VLESS link). All other connection details read from env vars set by `docker-compose.yaml`;
-  there's no config file for the portal.
+- Portal routes (all HTTPS, all Basic-Auth-gated): `/` (HTML status page), `/json` and `/api`
+  (connection info as JSON), `/qr` (PNG QR code of the VLESS link). Plus one unauthenticated route on
+  the plain-HTTP port only: `/.well-known/acme-challenge/{token}` (see "TLS / HTTPS"). All other
+  connection details read from env vars set by `docker-compose.yaml`; there's no config file for the
+  portal.
 - `data/config.json` blocks private and China (`geoip:cn`) IP ranges via routing rules — keep
   this in mind if debugging connectivity that looks like a routing rejection rather than a proxy failure.

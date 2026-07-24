@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="theme-color" content="#F7F5EF"/>
-<title>Access Pass · Xray Portal</title>
+<title th:text="'Net Sovereignty in a Box - ' + ${info.location}">Net Sovereignty in a Box - Server Location</title>
 <style>
   :root{
     --page:      #EFEAD9;
@@ -56,7 +56,9 @@
   .pass-head{
     display:flex;
     align-items:center;
+    flex-wrap:wrap;
     justify-content:space-between;
+    gap:6px 12px;
     padding:16px 22px;
     border-bottom:1px solid var(--line);
   }
@@ -64,9 +66,10 @@
     font-family:var(--mono);
     font-size:.72rem;
     font-weight:600;
-    letter-spacing:.14em;
+    letter-spacing:.1em;
     color:var(--ink);
     text-transform:uppercase;
+    min-width:0;
   }
   .stamp{
     font-family:var(--mono);
@@ -300,14 +303,14 @@
 
 <main class="pass">
   <div class="pass-head">
-    <span class="brand">&#10022; Access Pass</span>
+    <span class="brand" th:text="'&#10022; Access to ' + ${info.location}">&#10022; Access to City, Country</span>
     <span class="stamp">Live</span>
   </div>
 
   <div class="pass-body">
     <div class="stub">
       <img class="qr" src="/qr" alt="QR code for the VLESS connection link"/>
-      <p class="stub-caption">Scan to board</p>
+      <p class="stub-caption">Scan to connect</p>
       <p class="stub-apps">V2Box &middot; Hiddify &middot; v2rayNG &middot; Shadowrocket</p>
     </div>
 

@@ -1,5 +1,8 @@
 server:
   port: 8080
+  ssl:
+    enabled: true
+    bundle: portal
 
 spring:
   application:
@@ -7,10 +10,23 @@ spring:
   jackson:
     serialization:
       indent-output: true
+  ssl:
+    bundle:
+      pem:
+        portal:
+          reload-on-update: true
+          keystore:
+            certificate: file:/etc/xray/tls/active.crt
+            private-key: file:/etc/xray/tls/active.key
 
 xray-port: ${XRAY_PORT:443}
 portal-user-name: ${PORTAL_USER_NAME:}
 portal-password: ${PORTAL_PASSWORD:}
+domain: ${DOMAIN:}
+
+acme:
+  http-port: 8880
+  directory-url: ${ACME_DIRECTORY_URL:acme://letsencrypt.org}
 
 logging:
   level:

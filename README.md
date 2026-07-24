@@ -13,7 +13,7 @@ This isn't just a China problem. The UK's Online Safety Act already requires ISP
 - A cleaner alternative to Tor, which a growing number of people in the UK are starting to use — Tor is also where a lot of shady and illegal activity lives, whereas this is just your own, family-friendly uncensored internet access.
 - A compete solutiom, which takes about 15 minutes to deploy, with miminal configuration.
 - A private VLESS+REALITY proxy, with a unique identity and keypair generated on first start — nothing shared, nothing hardcoded.
-- A web portal with a ready-to-scan QR code and connection link.
+- A web portal (HTTPS, with automatic Let's Encrypt support) with a ready-to-scan QR code and connection link.
 - Full ownership: your VPS, your IP, your camouflage domain — no third-party VPN provider to trust or be pressured.
 
 ## What you need
@@ -39,17 +39,27 @@ The stack generates its own identity, keys, and config automatically on first st
 
 5. **Set portal credentials.** Open `docker-compose.yaml` and fill in `PORTAL_USER_NAME` and `PORTAL_PASSWORD` under the `portal` service's `environment:` section — they're blank by default, and the portal refuses to show your connection details until both are set.
 
-6. **Run it:**
+6. **(Optional) Point a domain at it for a trusted HTTPS certificate.** The portal is HTTPS-only and
+   works out of the box with a self-signed certificate — your browser will show a one-time warning
+   to click past. If you'd rather not see that, point a domain's DNS A/AAAA record at your VPS's IP
+   and set `DOMAIN` under the `portal` service's `environment:` section; the stack then automatically
+   obtains and renews a real certificate from Let's Encrypt (this needs port 80 reachable from the
+   internet, which the stack already publishes for you).
+
+7. **Run it:**
    ```
    docker compose up -d
    ```
-   On first start, the stack automatically generates a unique client identity and REALITY keypair — no manual configuration required beyond the portal credentials above.
+   On first start, the stack automatically generates a unique client identity, REALITY keypair, and
+   TLS certificate — no manual configuration required beyond the portal credentials above.
 
-7. **Open the portal.** In a browser, go to:
+8. **Open the portal.** In a browser, go to:
    ```
-   http://<VPS_IP>:16810
+   https://<VPS_IP>:16810
    ```
-   Log in with the `PORTAL_USER_NAME`/`PORTAL_PASSWORD` you set in step 5.
+   (or `https://<DOMAIN>:16810` if you set one in step 6). Without a configured `DOMAIN`, your browser
+   will warn about the self-signed certificate — that's expected, click through it. Log in with the
+   `PORTAL_USER_NAME`/`PORTAL_PASSWORD` you set in step 5.
 
 ## How to connect
 

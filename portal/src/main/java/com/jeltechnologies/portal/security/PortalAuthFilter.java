@@ -1,6 +1,8 @@
 package com.jeltechnologies.portal.security;
 
+import com.jeltechnologies.portal.config.AcmeProperties;
 import com.jeltechnologies.portal.config.PortalProperties;
+import com.jeltechnologies.portal.tls.AcmeChallengeController;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpFilter;
@@ -17,14 +19,29 @@ import java.util.Base64;
 public class PortalAuthFilter extends HttpFilter {
 
     private final PortalProperties properties;
+    private final AcmeProperties acmeProperties;
 
-    public PortalAuthFilter(PortalProperties properties) {
+    public PortalAuthFilter(PortalProperties properties, AcmeProperties acmeProperties) {
         this.properties = properties;
+        this.acmeProperties = acmeProperties;
     }
 
     @Override
     protected void doFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws IOException, ServletException {
+        // The ACME HTTP-01 challenge must be reachable without auth, on any connector.
+        if (req.getRequestURI().startsWith(AcmeChallengeController.CHALLENGE_PATH_PREFIX)) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        // The plain-HTTP connector exists only to answer ACME challenges — never let it serve
+        // real portal content or accept Basic Auth credentials over cleartext HTTP.
+        if (req.getLocalPort() == acmeProperties.httpPort()) {
+            res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
         if (!properties.authConfigured()) {
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             res.setContentType("text/plain");

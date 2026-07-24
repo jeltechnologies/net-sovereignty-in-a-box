@@ -61,10 +61,23 @@ services:
       - xray-net
     ports:
       - "16810:8080"
+      # Answers Let's Encrypt's HTTP-01 challenge only (see DOMAIN below) — every other
+      # path on this port 404s, nothing else is ever served here.
+      - "80:8880"
     volumes:
       - ./data:/etc/xray:ro
+      # More specific mount overrides the :ro above for just this subdirectory — the portal
+      # needs to write here (self-signed cert reuse, and to install/renew Let's Encrypt
+      # certificates), but stays read-only for identity.env/config.json, which it never writes.
+      - ./data/tls:/etc/xray/tls
     environment:
       XRAY_PORT: "443"
+      # Optional. Point a real domain's DNS A/AAAA record at this server and set it here
+      # to get an automatically issued and renewed Let's Encrypt certificate — requires
+      # port 80 above to be reachable from the internet (forward it on your router if
+      # you're behind NAT). Leave blank to keep using the self-signed certificate that's
+      # generated automatically on first start; HTTPS works either way.
+      DOMAIN: ""
       # Basic Auth for the portal. Left blank on purpose — the portal
       # exposes your UUID, REALITY keys, and VLESS link, so you must set
       # both directly here before it will serve any connection details.

@@ -37,7 +37,7 @@ public class ConnectionInfoProvider {
         this.connectionInfo = new ConnectionInfo(
                 "vless", identity.uuid(), publicIp, port, "xtls-rprx-vision", "reality",
                 identity.sniDomain(), identity.publicKey(), identity.shortId(), "chrome", "tcp",
-                vlessLink);
+                location, vlessLink);
 
         log.info("Public IP: {}", publicIp);
         log.info("VLESS link: {}", vlessLink);
